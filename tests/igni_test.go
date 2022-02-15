@@ -1,25 +1,27 @@
 package igni
 
+import (
+	"testing"
+
+	"github.com/c0de4un/igni"
+)
+
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // IMPORTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-import (
-	"testing"
-)
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // UNITS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 /// Configs loading test
-func TestReadConfigs(t *testing.T) {
-	app := NewIgni()
-	err := app.ReadConfigs()
+func TestLoading(t *testing.T) {
+	app := igni.NewIgni("..")
+	err := app.Load()
 	if err != nil {
-		t.Errorf("Igni::TestReadConfigs: %s", err)
+		t.Errorf("Igni::Load: failed with error: %s", err)
 	}
 }
 

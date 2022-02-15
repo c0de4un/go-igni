@@ -1,23 +1,23 @@
 package igni
 
+import (
+	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"os"
+)
+
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // IMPORTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-import (
-	"fmt"
-	"strconv"
-
-	"github.com/c0de4un/ini"
-)
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // CONSTANTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-const APP_CONFIG_PATH string = "data/configs/app.ini"
+const APP_CONFIG_PATH string = "data/configs/app.xml"
 
 const ENVIRONMENT_DEV int = 1
 const ENVIRONMENT_TESTING int = 2
@@ -27,74 +27,85 @@ const ENVIRONMENT_PRODUCTION int = 3
 // STRUCTS.PUBLIC
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-// Igni instance
-type Igni struct {
-	debug       bool
-	appName     string
-	environment int
+type IgniXML struct {
+	XMLName     xml.Name `xml:"Igni"`
+	Debug       bool     `xml:"debug,attr"`
+	AppName     string   `xml:"name,attr"`
+	Environment string   `xml:"environment,attr"`
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// OVERRIDE: ini.IReaderListener
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-func (igni *Igni) OnParam(name string, value string) error {
-	if name == "name" {
-		igni.appName = value
-		return nil
-	}
-
-	if name == "environment" {
-		var num int
-		if value == "production" {
-			num = ENVIRONMENT_PRODUCTION
-		} else if value == "development" {
-			num = ENVIRONMENT_DEV
-		} else if value == "testing" {
-			num = ENVIRONMENT_TESTING
-		} else {
-			return fmt.Errorf("invalid environment value: %s", value)
-		}
-
-		igni.environment = num
-		return nil
-	}
-
-	if name == "debug" {
-		val, err := strconv.ParseBool(value)
-		if err != nil {
-			return fmt.Errorf("invalid debug value")
-		}
-
-		igni.debug = val
-	}
-
-	return nil
+// Igni instance
+type Igni struct {
+	debug        bool
+	appName      string
+	environment  int
+	pathModifier string
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // GETTERS & SETTERS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func (igni *Igni) GetName() string {
-	return igni.appName
+func (app *Igni) IsDebug() bool {
+	return app.debug
+}
+
+func (app *Igni) GetAppName() string {
+	return app.appName
+}
+
+func (app *Igni) GetEnvironment() int {
+	return app.environment
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// METHODS.PUBLIC
+// PUBLIC.METHODS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func NewIgni() Igni {
-	var instance Igni
-	return instance
+/// Creates new Igni instance
+/// path - path to app root dir
+/// leave empty, if called from app dir already
+func NewIgni(path string) Igni {
+	var app Igni
+	app.pathModifier = path
+
+	return app
 }
 
-func (igni *Igni) ReadConfigs() error {
-	reader := ini.NewReader()
-	return reader.ReadAll(APP_CONFIG_PATH, igni)
-}
+/// Load params from config-file
+func (app *Igni) Load() error {
+	xmlFile, err := os.Open(app.pathModifier + "/" + APP_CONFIG_PATH)
+	if err != nil {
+		return err
+	}
+	defer xmlFile.Close()
 
-func (igni *Igni) StartServer() error {
+	xmlBytes, err := ioutil.ReadAll(xmlFile)
+	if err != nil {
+		return err
+	}
+
+	var appXml IgniXML
+
+	err = xml.Unmarshal(xmlBytes, &appXml)
+	if err != nil {
+		return nil
+	}
+
+	app.appName = appXml.AppName
+
+	app.debug = appXml.Debug
+
+	if appXml.Environment == "production" {
+		app.environment = ENVIRONMENT_PRODUCTION
+	} else if appXml.Environment == "development" {
+		app.environment = ENVIRONMENT_DEV
+	} else if appXml.Environment == "testing" {
+		app.environment = ENVIRONMENT_TESTING
+	} else {
+		return fmt.Errorf("Igni::Load: invalid environment: %s", appXml.Environment)
+	}
+
 	return nil
 }
 
