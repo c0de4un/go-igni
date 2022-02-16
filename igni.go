@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 )
 
@@ -32,6 +34,8 @@ type IgniXML struct {
 	Debug       bool     `xml:"debug,attr"`
 	AppName     string   `xml:"name,attr"`
 	Environment string   `xml:"environment,attr"`
+	Host        string   `xml:"host,attr"`
+	Port        string   `xml:"port,attr"`
 }
 
 // Igni instance
@@ -40,6 +44,8 @@ type Igni struct {
 	appName      string
 	environment  int
 	pathModifier string
+	host         string
+	port         string
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -58,6 +64,10 @@ func (app *Igni) GetEnvironment() int {
 	return app.environment
 }
 
+func (app *Igni) GetUrl() string {
+	return app.host + ":" + app.port
+}
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // PUBLIC.METHODS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -74,6 +84,7 @@ func NewIgni(path string) Igni {
 
 /// Load params from config-file
 func (app *Igni) Load() error {
+
 	xmlFile, err := os.Open(app.pathModifier + "/" + APP_CONFIG_PATH)
 	if err != nil {
 		return err
@@ -89,7 +100,7 @@ func (app *Igni) Load() error {
 
 	err = xml.Unmarshal(xmlBytes, &appXml)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	app.appName = appXml.AppName
@@ -106,7 +117,23 @@ func (app *Igni) Load() error {
 		return fmt.Errorf("Igni::Load: invalid environment: %s", appXml.Environment)
 	}
 
+	app.host = appXml.Host
+	app.port = appXml.Port
+
 	return nil
+}
+
+func (app *Igni) Run() {
+	http.HandleFunc("/", app.handleRequest)
+	http.ListenAndServe(app.GetUrl(), nil)
+}
+
+func (app *Igni) handleRequest(response http.ResponseWriter, request *http.Request) {
+	message := []byte("Hello Golang Server World !")
+	_, err := response.Write(message)
+	if err != nil {
+		log.Fatalf("Igni::handleRequest: %s", err)
+	}
 }
 
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =

@@ -22,6 +22,12 @@ func TestLoading(t *testing.T) {
 	err := app.Load()
 	if err != nil {
 		t.Errorf("Igni::Load: failed with error: %s", err)
+		return
+	}
+
+	if app.GetAppName() != "Igni" {
+		t.Errorf("Igni::Load: invalid name: %s", app.GetAppName())
+		return
 	}
 }
 

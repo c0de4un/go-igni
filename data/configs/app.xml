@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<App
+<Igni
     name="Igni"
     debug="true"
     environment="development"
     version="0.1"
+    host="localhost"
+    port="3412"
 >
-</App>
+</Igni>
