@@ -10,11 +10,23 @@ package igni
 // STRUCTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-type HttpServer struct {
+type Router struct {
+	routes map[string]*Route
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// METHODS.PUBLIC
+// PUBLIC.METHODS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+func NewRouter() *Router {
+	return &Router{}
+}
+
+func (router *Router) Load(path string) error {
+	config := NewRouterConfig()
+	err := config.Load(path)
+
+	return err
+}
 
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =

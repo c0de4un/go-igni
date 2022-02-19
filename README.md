@@ -17,10 +17,14 @@ Inspired by classical PHP Frameworks like CodeIgnier & Laravel
 * thread-safety
 
 # Dependencies
-* go-ini
+* xml
+* http
+* lumberjack
+* zerolog
 
 # Tests
 * each dir has its own unit-tests
 ```bash
+$cd tests
 $go test
 ```
