@@ -1,6 +1,10 @@
 package igni
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+	"net/http"
+)
 
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
@@ -20,7 +24,7 @@ type Route struct {
 	name    string
 	path    string
 	handler int
-	routes  []*Route `xml:"Routes"`
+	routes  []*Route
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\
@@ -35,12 +39,35 @@ func (route *Route) GetPath() string {
 	return route.path
 }
 
-func (route *Route) GetHandler() int {
-	return route.handler
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// OVERRIDE: http.Handler
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+func (route *Route) handleRequest(writer http.ResponseWriter, request *http.Request) {
+	router := GetRouterInstance()
+
+	controller := router.GetHandler(route.handler)
+
+	controller.HandleRequest(writer, request)
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // PUBLIC.METHODS
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+// Attach route and its children to muxer
+func (route *Route) Attach(parent string) {
+	fmt.Printf("attaching route %s", route.name)
+	path := parent + route.path
+	http.HandleFunc(path, route.handleRequest)
+
+	for _, child := range route.routes {
+		child.Attach(path + "/")
+	}
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// PRIVATE.METHODS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (routeXMl *RouteXML) fromXML() *Route {

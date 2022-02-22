@@ -7,8 +7,10 @@ package igni
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 import (
-	"log"
+	"fmt"
 	"net/http"
+
+	igni_router "github.com/c0de4un/igni/core/routing"
 )
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -24,7 +26,9 @@ const APP_ROUTER_CONFIG_PATH string = "data/configs/router.xml"
 
 // Igni instance
 type Igni struct {
-	config AppConfig
+	pathModifier string
+	config       AppConfig
+	router       igni_router.Router
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -44,25 +48,23 @@ func (app *Igni) GetUrl() string {
 /// leave empty, if called from app dir already
 func New(path string) Igni {
 	var app Igni
+	app.pathModifier = path
 
 	return app
 }
 
 func (app *Igni) Start() error {
-	http.HandleFunc("/", app.handleRequest)
+	fmt.Println("main: loading routing")
+	err := app.router.Load(app.pathModifier + APP_ROUTER_CONFIG_PATH)
+	if err != nil {
+		return err
+	}
+	app.router.InitHandlers()
 
+	fmt.Println("main: starting http server")
 	http.ListenAndServe(app.GetUrl(), nil)
 
 	return nil
-}
-
-// Router entrypoint
-func (app *Igni) handleRequest(response http.ResponseWriter, request *http.Request) {
-	message := []byte("Hello Golang Server World !")
-	_, err := response.Write(message)
-	if err != nil {
-		log.Fatalf("Igni::handleRequest: %s", err)
-	}
 }
 
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
