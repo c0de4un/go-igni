@@ -1,22 +1,23 @@
 package igni
 
+import (
+	"fmt"
+	"log"
+)
+
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // IMPORTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-import (
-	igni_http "github.com/c0de4un/igni/core/http"
-)
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // STRUCTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 type Router struct {
-	routes      map[string]*Route
-	controllers map[int]*igni_http.Controller
+	routes   map[string]*Route
+	handlers map[string]IRequestHandler
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -26,50 +27,59 @@ type Router struct {
 var routerInstance *Router
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// GETTERS & SETTERS
+// METHODS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-// Static instance getters
 func GetRouterInstance() *Router {
 	return routerInstance
 }
 
-func (router *Router) GetHandler(id int) *igni_http.Controller {
-	controller, ok := router.controllers[id]
+func (router *Router) GetHandler(id string) IRequestHandler {
+	handler, ok := router.handlers[id]
 	if !ok {
-		return nil
+		log.Fatalf("Router::GetHandler: no handler were found for %s", id)
 	}
 
-	return controller
+	return handler
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// PUBLIC.METHODS
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-// New Router instance
 func NewRouter() *Router {
 	routerInstance = &Router{}
 	routerInstance.routes = make(map[string]*Route)
-	routerInstance.controllers = make(map[int]*igni_http.Controller)
+	routerInstance.handlers = make(map[string]IRequestHandler)
 
 	return routerInstance
 }
 
-func (router *Router) RegisterHandler() {
+func (router *Router) RegisterHandler(handler IRequestHandler) {
+	if len(handler.GetName()) < 1 {
+		log.Fatal("Router::RegisterHandler: invalid handler name")
+	}
 
+	fmt.Printf("Router::RegisterHandler: %s", handler.GetName())
+	fmt.Println("")
+
+	router.handlers[handler.GetName()] = handler
 }
 
-// Load routes
 func (router *Router) Load(path string) error {
-	config := NewRouterConfig()
-	err := config.Load(path)
+	routes, err := LoadRouterConfig(path)
+	if err != nil {
+		return err
+	}
 
-	return err
+	router.routes = routes
+	return nil
 }
 
-// Attach handlers
 func (router *Router) InitHandlers() {
+	if len(router.handlers) < 1 {
+		log.Fatal("Router::InitHandlers: no handlers were added")
+	}
+	if len(router.routes) < 1 {
+		log.Fatal("Router::InitHandlers: no routes were loaded")
+	}
+
 	for _, route := range router.routes {
 		route.Attach("/")
 	}

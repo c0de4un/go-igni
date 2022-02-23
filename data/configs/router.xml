@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Router>
-    <Route name="index" path="/" handler="1"></Route>
+    <Route name="index" path="/" controller="auth" handler="index" ></Route>
 </Router>

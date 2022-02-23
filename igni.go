@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
+	igni_config "github.com/c0de4un/igni/core/config"
 	igni_router "github.com/c0de4un/igni/core/routing"
 )
 
@@ -27,8 +28,8 @@ const APP_ROUTER_CONFIG_PATH string = "data/configs/router.xml"
 // Igni instance
 type Igni struct {
 	pathModifier string
-	config       AppConfig
-	router       igni_router.Router
+	config       igni_config.AppConfig
+	router       *igni_router.Router
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -36,7 +37,7 @@ type Igni struct {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 func (app *Igni) GetUrl() string {
-	return app.config.host + ":" + app.config.port
+	return app.config.GetHost() + ":" + app.config.GetPort()
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -49,19 +50,27 @@ func (app *Igni) GetUrl() string {
 func New(path string) Igni {
 	var app Igni
 	app.pathModifier = path
+	app.router = igni_router.NewRouter()
 
 	return app
 }
 
-func (app *Igni) Start() error {
-	fmt.Println("main: loading routing")
+func (app *Igni) Load() error {
+	fmt.Println("igni: loading routing")
 	err := app.router.Load(app.pathModifier + APP_ROUTER_CONFIG_PATH)
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (app *Igni) Start() error {
+
+	fmt.Println("igni: initializing handlers")
 	app.router.InitHandlers()
 
-	fmt.Println("main: starting http server")
+	fmt.Println("igni: starting http server")
 	http.ListenAndServe(app.GetUrl(), nil)
 
 	return nil

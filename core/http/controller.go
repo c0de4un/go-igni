@@ -6,26 +6,52 @@ package igni
 // IMPORTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-import "net/http"
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// STRUCT
+// STRUCTS
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 type Controller struct {
+	name string
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// METHODS
+// METHODS.PUBLIC
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-func NewController() *Controller {
-	return &Controller{}
+func (controller *Controller) GetName() string {
+	return controller.name
 }
 
-// Handle request
-// target - name of last segment
-func (controller *Controller) HandleRequest(writer http.ResponseWriter, request *http.Request) {
+func (controller *Controller) HandleRequest(response http.ResponseWriter, request *http.Request, handler string) bool {
+	fmt.Printf("Controller::HandleRequest: handler=%s; uri=%s;", handler, request.RequestURI)
+	if handler == "index" {
+		controller.index(response, request)
+		return true
+	}
+
+	return false
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// METHODS.PRIVATE
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+func (controller *Controller) index(response http.ResponseWriter, request *http.Request) {
+	writeResponse("Hello Golang Server World !", response)
+}
+
+func writeResponse(message string, response http.ResponseWriter) {
+	bytes := []byte(message)
+	_, err := response.Write(bytes)
+	if err != nil {
+		log.Fatalf("Controller::writeResponse: %s", err)
+	}
 }
 
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
